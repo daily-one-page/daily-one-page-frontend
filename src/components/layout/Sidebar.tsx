@@ -1,4 +1,4 @@
-import { Home, CheckSquare, Calendar, Edit3, Settings, User, LogOut } from 'lucide-react';
+import { Home, CheckSquare, Calendar, Award, User as UserIcon, Edit3, Settings, LogOut } from 'lucide-react';
 import type { TabType, UserProfile } from '../../types';
 
 interface SidebarProps {
@@ -13,6 +13,8 @@ const navItems: { id: TabType; label: string; icon: typeof Home }[] = [
   { id: 'home', label: '홈', icon: Home },
   { id: 'habits', label: '습관', icon: CheckSquare },
   { id: 'calendar', label: '캘린더', icon: Calendar },
+  { id: 'badges', label: '뱃지', icon: Award },
+  { id: 'mypage', label: '마이', icon: UserIcon },
 ];
 
 export default function Sidebar({ activeTab, onTabChange, onWriteClick, onLogout, user }: SidebarProps) {
@@ -20,7 +22,10 @@ export default function Sidebar({ activeTab, onTabChange, onWriteClick, onLogout
     <aside className="w-66 h-screen bg-surface flex flex-col border-r border-accent/50">
       {/* 로고 영역 */}
       <div className="p-6 border-b border-accent/50">
-        <h1 className="text-2xl font-bold text-primary">오늘한장</h1>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🌱</span>
+          <h1 className="text-2xl font-bold text-primary">오늘한장</h1>
+        </div>
         <p className="text-sm text-text-secondary mt-1">하루 한 장, 나를 완성하는 기록</p>
       </div>
 
@@ -62,13 +67,16 @@ export default function Sidebar({ activeTab, onTabChange, onWriteClick, onLogout
       <div className="p-4 border-t border-accent/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-            <User size={20} className="text-secondary" />
+            <UserIcon size={20} className="text-secondary" />
           </div>
           <div className="flex-1">
             <p className="font-medium text-text">{user.nickname}</p>
-            <p className="text-xs text-text-secondary">{user.streak}일 연속 기록 중</p>
+            <p className="text-xs text-text-secondary">🔥 {user.streak}일 연속 기록 중</p>
           </div>
-          <button className="p-2 rounded-lg hover:bg-accent/50 transition-colors">
+          <button
+            onClick={() => onTabChange('mypage')}
+            className="p-2 rounded-lg hover:bg-accent/50 transition-colors"
+          >
             <Settings size={18} className="text-text-secondary" />
           </button>
         </div>

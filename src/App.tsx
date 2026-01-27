@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
-import type { TabType, HabitType, Habit, User } from './types';
+import { Plus, ArrowLeft } from 'lucide-react';
+import type { TabType, HabitType, Habit, User, SystemHabit } from './types';
+
+// Theme
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Layout
 import Sidebar from './components/layout/Sidebar';
@@ -21,9 +24,21 @@ import CalendarGrid from './components/calendar/CalendarGrid';
 import StatsCard from './components/calendar/StatsCard';
 import DateDetailCard from './components/calendar/DateDetailCard';
 
+// Badge Components
+import BadgeCollection from './components/badges/BadgeCollection';
+import BadgeProgressCard from './components/badges/BadgeProgressCard';
+
+// MyPage Components
+import ProfileCard from './components/mypage/ProfileCard';
+import SettingsMenu from './components/mypage/SettingsMenu';
+
+// Theme Components
+import ThemeSelector from './components/theme/ThemeSelector';
+
 // Common Components
 import WriteModal from './components/common/WriteModal';
 import Toast from './components/common/Toast';
+import SystemHabitModal from './components/common/SystemHabitModal';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -36,13 +51,17 @@ import {
   mockAchievements,
   mockAIFeedback,
   mockRecords,
+  mockUserBadges,
+  mockBadgeProgress,
+  mockUserStats,
+  systemHabits,
   getRecordByDate,
   getMonthStats,
 } from './data/mockData';
 
 type AuthPage = 'login' | 'signup';
 
-function App() {
+function AppContent() {
   // 인증 상태 (Mock - 나중에 백엔드 연결 시 교체)
   const [user, setUser] = useState<User | null>(null);
   const [authPage, setAuthPage] = useState<AuthPage>('login');
@@ -64,18 +83,20 @@ function App() {
 
   // 토스트 상태
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
-  // 습관 생성 페이지 상태
+  // 습관 생성 페이지/모달 상태
   const [showCreateHabit, setShowCreateHabit] = useState(false);
+  const [showSystemHabitModal, setShowSystemHabitModal] = useState(false);
+
+  // 테마 설정 페이지 상태
+  const [showThemeSettings, setShowThemeSettings] = useState(false);
 
   // ============================================
   // 인증 핸들러 (Mock - 백엔드 연결 시 교체)
   // ============================================
   const handleLogin = (email: string, password: string) => {
-    // TODO: 백엔드 API 연결
     console.log('로그인 시도:', email, password);
-
-    // Mock 로그인 - 무조건 성공
     setUser({
       id: '1',
       email,
@@ -85,10 +106,7 @@ function App() {
   };
 
   const handleSignup = (email: string, password: string, nickname: string) => {
-    // TODO: 백엔드 API 연결
     console.log('회원가입 시도:', email, password, nickname);
-
-    // Mock 회원가입 - 무조건 성공 후 로그인
     setUser({
       id: '1',
       email,
@@ -98,10 +116,7 @@ function App() {
   };
 
   const handleSocialLogin = (provider: 'google' | 'kakao') => {
-    // TODO: 백엔드 OAuth 연결
     console.log('소셜 로그인:', provider);
-
-    // Mock 소셜 로그인
     setUser({
       id: '1',
       email: `user@${provider}.com`,
@@ -111,13 +126,16 @@ function App() {
   };
 
   const handleLogout = () => {
-    // TODO: 백엔드 로그아웃 API 연결
     setUser(null);
     setAuthPage('login');
+    setActiveTab('home');
   };
 
+  // ============================================
+  // 습관 핸들러
+  // ============================================
   const handleCreateHabit = (name: string, type: 'practice' | 'restraint') => {
-    const newHabit = {
+    const newHabit: Habit = {
       id: Date.now().toString(),
       name,
       type,
@@ -126,25 +144,61 @@ function App() {
     };
     setHabits(prev => [...prev, newHabit]);
     setShowCreateHabit(false);
+    showToastMessage('새 습관이 추가되었어요! 🌱');
   };
 
-  // ============================================
-  // 기존 핸들러
-  // ============================================
+  const handleSelectSystemHabit = (systemHabit: SystemHabit) => {
+    const newHabit: Habit = {
+      id: Date.now().toString(),
+      name: systemHabit.name,
+      type: systemHabit.type,
+      checked: false,
+      streak: 0,
+      isSystem: true,
+    };
+    setHabits(prev => [...prev, newHabit]);
+    setShowSystemHabitModal(false);
+    showToastMessage(`${systemHabit.name} 습관이 추가되었어요! 🌱`);
+  };
+
   const handleToggleHabit = (id: string) => {
     setHabits(prev =>
       prev.map(h => (h.id === id ? { ...h, checked: !h.checked } : h))
     );
   };
 
+  // ============================================
+  // 설정 핸들러
+  // ============================================
+  const handleSettingsClick = (item: string) => {
+    if (item === 'theme') {
+      setShowThemeSettings(true);
+    } else {
+      showToastMessage('설정 기능은 준비 중이에요 🛠️');
+    }
+  };
+
+  // ============================================
+  // 글쓰기 핸들러
+  // ============================================
   const handleSaveJournal = (content: string) => {
     console.log('저장된 내용:', content);
     setTodayWritten(true);
     setIsWriteModalOpen(false);
+    showToastMessage('오늘의 기록이 저장되었어요 ✨');
+  };
+
+  // ============================================
+  // 토스트 핸들러
+  // ============================================
+  const showToastMessage = (message: string) => {
+    setToastMessage(message);
     setShowToast(true);
   };
 
-  // 인사말 생성
+  // ============================================
+  // 유틸리티 함수
+  // ============================================
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 6) return '좋은 새벽이에요';
@@ -163,9 +217,9 @@ function App() {
   const restraintHabits = habits.filter(h => h.type === 'restraint');
   const completedPractice = practiceHabits.filter(h => h.checked).length;
   const completedRestraint = restraintHabits.filter(h => !h.checked).length;
-  const completionRate = Math.round(
-    ((completedPractice + completedRestraint) / habits.length) * 100
-  );
+  const completionRate = habits.length > 0
+    ? Math.round(((completedPractice + completedRestraint) / habits.length) * 100)
+    : 0;
 
   // 이번 달 통계
   const monthStats = getMonthStats(currentMonth.getFullYear(), currentMonth.getMonth());
@@ -208,6 +262,29 @@ function App() {
   }
 
   // ============================================
+  // 테마 설정 페이지
+  // ============================================
+  if (showThemeSettings) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-2xl mx-auto p-8">
+          {/* 뒤로가기 헤더 */}
+          <button
+            onClick={() => setShowThemeSettings(false)}
+            className="flex items-center gap-2 text-text-secondary hover:text-text mb-6 transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span>마이페이지로 돌아가기</span>
+          </button>
+
+          {/* 테마 선택기 */}
+          <ThemeSelector />
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
   // 로그인 상태: 메인 앱
   // ============================================
   return (
@@ -224,7 +301,9 @@ function App() {
       {/* 메인 콘텐츠 */}
       <main className="flex-1 overflow-auto">
         <div className="max-w-5xl mx-auto p-8">
+          {/* ============================================ */}
           {/* 홈 탭 */}
+          {/* ============================================ */}
           {activeTab === 'home' && (
             <div className="animate-fade-in">
               {/* 헤더 */}
@@ -264,13 +343,15 @@ function App() {
 
               {/* 배너 */}
               <Banner
-                message="새로운 뱃지 시스템이 업데이트되었어요!"
-                onActionClick={() => console.log('배너 클릭')}
+                message="🎉 금연 30일 달성! 오마카세 한 끼 값을 절약했어요!"
+                onActionClick={() => setActiveTab('badges')}
               />
             </div>
           )}
 
+          {/* ============================================ */}
           {/* 습관 탭 */}
+          {/* ============================================ */}
           {activeTab === 'habits' && (
             <div className="animate-fade-in">
               {/* 헤더 */}
@@ -280,7 +361,7 @@ function App() {
                   <p className="text-text-secondary mt-1">매일 꾸준히, 작은 실천이 큰 변화를 만듭니다</p>
                 </div>
                 <button
-                  onClick={() => setShowCreateHabit(true)}
+                  onClick={() => setShowSystemHabitModal(true)}
                   className="flex items-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-medium hover:scale-[1.02] active:scale-[0.98] transition-transform"
                 >
                   <Plus size={18} />
@@ -319,10 +400,27 @@ function App() {
                     />
                   ))}
               </div>
+
+              {/* 빈 상태 */}
+              {habits.filter(h => h.type === habitType).length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-text-secondary mb-4">
+                    아직 {habitType === 'practice' ? '실천' : '절제'} 습관이 없어요
+                  </p>
+                  <button
+                    onClick={() => setShowSystemHabitModal(true)}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    습관 추가하기 →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
+          {/* ============================================ */}
           {/* 캘린더 탭 */}
+          {/* ============================================ */}
           {activeTab === 'calendar' && (
             <div className="animate-fade-in">
               {/* 헤더 */}
@@ -358,6 +456,58 @@ function App() {
               </div>
             </div>
           )}
+
+          {/* ============================================ */}
+          {/* 뱃지 탭 */}
+          {/* ============================================ */}
+          {activeTab === 'badges' && (
+            <div className="animate-fade-in">
+              {/* 헤더 */}
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-text">뱃지</h1>
+                <p className="text-text-secondary mt-1">습관을 통해 얻은 나의 성취들</p>
+              </div>
+
+              {/* 진행 중인 뱃지 */}
+              <div className="mb-8">
+                <h2 className="font-semibold text-text mb-4">🎯 진행 중인 도전</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {mockBadgeProgress.map((progress, index) => (
+                    <BadgeProgressCard key={index} progress={progress} />
+                  ))}
+                </div>
+              </div>
+
+              {/* 획득한 뱃지 */}
+              <div>
+                <h2 className="font-semibold text-text mb-4">🏆 획득한 뱃지</h2>
+                <BadgeCollection badges={mockUserBadges} />
+              </div>
+            </div>
+          )}
+
+          {/* ============================================ */}
+          {/* 마이페이지 탭 */}
+          {/* ============================================ */}
+          {activeTab === 'mypage' && (
+            <div className="animate-fade-in">
+              {/* 헤더 */}
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-text">마이페이지</h1>
+                <p className="text-text-secondary mt-1">내 정보와 설정을 관리하세요</p>
+              </div>
+
+              {/* 프로필 + 설정 */}
+              <div className="grid grid-cols-2 gap-6">
+                <ProfileCard
+                  nickname={user.nickname}
+                  email={user.email}
+                  stats={mockUserStats}
+                />
+                <SettingsMenu onItemClick={handleSettingsClick} />
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -368,13 +518,34 @@ function App() {
         onSave={handleSaveJournal}
       />
 
+      {/* 시스템 습관 선택 모달 */}
+      <SystemHabitModal
+        isOpen={showSystemHabitModal}
+        onClose={() => setShowSystemHabitModal(false)}
+        systemHabits={systemHabits}
+        onSelectHabit={handleSelectSystemHabit}
+        onCreateCustom={() => {
+          setShowSystemHabitModal(false);
+          setShowCreateHabit(true);
+        }}
+      />
+
       {/* 토스트 */}
       <Toast
-        message="오늘의 기록이 저장되었어요 ✨"
+        message={toastMessage}
         isVisible={showToast}
         onClose={() => setShowToast(false)}
       />
     </div>
+  );
+}
+
+// ThemeProvider로 감싼 App 컴포넌트
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 
