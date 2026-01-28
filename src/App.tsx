@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { TabType, HabitType, Habit, User, SystemHabit } from './types';
 
 // Theme
@@ -33,17 +33,17 @@ import ProfileCard from './components/mypage/ProfileCard';
 import SettingsMenu from './components/mypage/SettingsMenu';
 
 // Theme Components
-import ThemeSelector from './components/theme/ThemeSelector';
+import ThemeModal from './components/theme/ThemeModal';
 
 // Common Components
 import WriteModal from './components/common/WriteModal';
 import Toast from './components/common/Toast';
 import SystemHabitModal from './components/common/SystemHabitModal';
+import CreateHabitModal from './components/common/CreateHabitModal';
 
 // Pages
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import CreateHabitPage from './pages/CreateHabitPage';
 
 // Mock Data
 import {
@@ -246,41 +246,6 @@ function AppContent() {
         onSocialLogin={handleSocialLogin}
         onGoToLogin={() => setAuthPage('login')}
       />
-    );
-  }
-
-  // ============================================
-  // 습관 생성 페이지
-  // ============================================
-  if (showCreateHabit) {
-    return (
-      <CreateHabitPage
-        onBack={() => setShowCreateHabit(false)}
-        onCreate={handleCreateHabit}
-      />
-    );
-  }
-
-  // ============================================
-  // 테마 설정 페이지
-  // ============================================
-  if (showThemeSettings) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-2xl mx-auto p-8">
-          {/* 뒤로가기 헤더 */}
-          <button
-            onClick={() => setShowThemeSettings(false)}
-            className="flex items-center gap-2 text-text-secondary hover:text-text mb-6 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            <span>마이페이지로 돌아가기</span>
-          </button>
-
-          {/* 테마 선택기 */}
-          <ThemeSelector />
-        </div>
-      </div>
     );
   }
 
@@ -535,6 +500,19 @@ function AppContent() {
         message={toastMessage}
         isVisible={showToast}
         onClose={() => setShowToast(false)}
+      />
+
+      {/* 테마 설정 모달 */}
+      <ThemeModal
+        isOpen={showThemeSettings}
+        onClose={() => setShowThemeSettings(false)}
+      />
+
+      {/* 커스텀 습관 생성 모달 */}
+      <CreateHabitModal
+        isOpen={showCreateHabit}
+        onClose={() => setShowCreateHabit(false)}
+        onCreate={handleCreateHabit}
       />
     </div>
   );
