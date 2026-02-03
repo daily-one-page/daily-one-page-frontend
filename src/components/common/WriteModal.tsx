@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface WriteModalProps {
   isOpen: boolean;
@@ -10,6 +10,11 @@ interface WriteModalProps {
 
 export default function WriteModal({ isOpen, onClose, onSave, initialContent = '' }: WriteModalProps) {
   const [content, setContent] = useState(initialContent);
+
+  // initialContent 변경 시 동기화
+  useEffect(() => {
+    setContent(initialContent);
+  }, [initialContent, isOpen]);
 
   if (!isOpen) return null;
 
